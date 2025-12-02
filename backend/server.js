@@ -12,6 +12,7 @@ const app = express();
 
 // Middleware
 app.use(cors());
+app.options('*', cors()); // explicitly respond to preflight for any route
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use('/uploads', express.static('uploads'));
