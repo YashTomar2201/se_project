@@ -11,7 +11,11 @@ require('dotenv').config();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ["https://se-project-1jrr-git-main-yashtomar2201s-projects.vercel.app/", "http://localhost:3000", "http://localhost:5173"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));;
 app.options('*', cors()); // explicitly respond to preflight for any route
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
