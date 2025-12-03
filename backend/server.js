@@ -552,7 +552,9 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
 module.exports = app;
 
-// const PORT = process.env.PORT || 5000;
-// app.listen(PORT, () => {
-//   console.log(`🚀 Server running on port ${PORT}`);
-// });
+// ✅ Use Render's port, or 5000 if testing locally
+const PORT = process.env.PORT || 5000; 
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
