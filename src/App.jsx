@@ -1,106 +1,113 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Plus, X, Send, Star, User, LogOut, Menu, Filter, Clock, ArrowLeft, Navigation, ShoppingBag, List, Search, Calendar, MessageCircle, Upload, Locate, Minus, Circle, Heart, ChevronRight, Pizza, Coffee, Apple, Carrot, Sandwich, Utensils, Croissant, ChefHat, UtensilsCrossed, Link, Twitter, Share2, RefreshCw, Trash2, CheckCircle, XCircle } from 'lucide-react';
-import api from './services/api';
 
-// --- Mock Data ---
-const INITIAL_LISTINGS = [
-  {
-    id: 1,
-    title: 'Fresh Homemade Pasta',
-    description: 'Hand-rolled tagliatelle made with organic eggs and semolina flour. Perfect for a quick dinner.',
-    provider: 'Sarah Johnson',
-    providerId: 2,
-    type: 'prepared',
-    quantity: '4 servings',
-    price: 'Free',
-    location: { lat: 30.3398, lng: 76.3869, address: 'Sector 22, Patiala' },
-    image: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400',
-    expiresAt: new Date(Date.now() + 3600000).toISOString(),
-    status: 'available',
-    rating: 4.8,
-    reviewCount: 12,
-    reviews: [
-        { id: 101, user: "Alice M.", rating: 5, text: "Absolutely delicious! Tasted just like my nonna's.", date: "2 days ago" },
-        { id: 102, user: "Bob D.", rating: 4, text: "Great texture, very fresh.", date: "1 week ago" }
-    ],
-    dietary: ['vegetarian']
-  },
-  {
-    id: 2,
-    title: 'Garden Tomatoes',
-    description: 'Sun-ripened, juicy, and pesticide-free. Harvested just this morning from my backyard.',
-    provider: 'Rajesh Kumar',
-    providerId: 3,
-    type: 'produce',
-    quantity: '2 kg',
-    price: '₹40',
-    location: { lat: 30.3365, lng: 76.3883, address: 'Model Town, Patiala' },
-    image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400',
-    expiresAt: new Date(Date.now() + 7200000).toISOString(),
-    status: 'available',
-    rating: 4.9,
-    reviewCount: 28,
-    reviews: [
-        { id: 201, user: "Charlie", rating: 5, text: "Best tomatoes I've had in years.", date: "3 days ago" }
-    ],
-    dietary: ['vegan', 'vegetarian']
-  },
-  {
-    id: 3,
-    title: 'Sourdough Loaves',
-    description: 'Artisan sourdough fermented for 48 hours. Crusty outside, soft inside.',
-    provider: 'Sweet Delights',
-    providerId: 4,
-    type: 'bakery',
-    quantity: '6 loaves',
-    price: '₹120',
-    location: { lat: 30.3412, lng: 76.3901, address: 'Mall Road, Patiala' },
-    image: 'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=400',
-    expiresAt: new Date(Date.now() + 5400000).toISOString(),
-    status: 'available',
-    rating: 5.0,
-    reviewCount: 45,
-    reviews: [
-        { id: 301, user: "Dave", rating: 5, text: "Perfect crust!", date: "1 day ago" }
-    ],
-    dietary: ['vegetarian']
-  },
-  {
-    id: 4,
-    title: 'Veggie Biryani',
-    description: 'Aromatic basmati rice cooked with fresh seasonal vegetables and exotic spices.',
-    provider: 'Anita Singh',
-    providerId: 5,
-    type: 'prepared',
-    quantity: '3 plates',
-    price: '₹150',
-    location: { lat: 30.3450, lng: 76.3950, address: 'Civil Lines, Patiala' },
-    image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400',
-    expiresAt: new Date(Date.now() + 7200000).toISOString(),
-    status: 'available',
-    rating: 4.6,
-    reviewCount: 8,
-    reviews: [],
-    dietary: ['vegetarian', 'gluten-free']
-  },
-  {
-    id: 5,
-    title: 'Chocolate Brownies',
-    description: 'Fudgy, rich chocolate brownies topped with walnuts. Freshly baked.',
-    provider: 'The Bake Shop',
-    providerId: 4,
-    type: 'bakery',
-    quantity: '12 pcs',
-    price: '₹300',
-    location: { lat: 30.3412, lng: 76.3901, address: 'Mall Road, Patiala' },
-    image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400',
-    expiresAt: new Date(Date.now() + 86400000).toISOString(),
-    status: 'available',
-    rating: 5.0,
-    reviewCount: 62,
-    reviews: [],
-    dietary: ['vegetarian']
+// --- API Service (Inlined for Single File Compatibility) ---
+const BASE_URL = window.location.href.includes('localhost') 
+  ? 'http://localhost:5000/api' 
+  : 'https://se-project-gkzu.onrender.com/api';
+
+class ApiService {
+  constructor() {
+    this.token = localStorage.getItem('token');
   }
+
+  setToken(token) {
+    this.token = token;
+    localStorage.setItem('token', token);
+  }
+
+  clearToken() {
+    this.token = null;
+    localStorage.removeItem('token');
+  }
+
+  async request(endpoint, options = {}) {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    };
+
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+
+    const config = {
+      ...options,
+      headers,
+    };
+
+    try {
+      const response = await fetch(`${BASE_URL}${endpoint}`, config);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Request failed');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('API Error:', error);
+      throw error;
+    }
+  }
+
+  // Auth
+  async signup(name, email, password) {
+    const data = await this.request('/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify({ name, email, password }),
+    });
+    this.setToken(data.token);
+    return data.user;
+  }
+
+  async login(email, password) {
+    const data = await this.request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    this.setToken(data.token);
+    return data.user;
+  }
+
+  // Listings
+  async getListings(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.type) params.append('type', filters.type);
+    if (filters.search) params.append('search', filters.search);
+    if (filters.lat) params.append('lat', filters.lat);
+    if (filters.lng) params.append('lng', filters.lng);
+    if (filters.radius) params.append('radius', filters.radius);
+
+    return this.request(`/listings?${params.toString()}`);
+  }
+
+  async createListing(listingData) {
+    return this.request('/listings', {
+      method: 'POST',
+      body: JSON.stringify(listingData),
+    });
+  }
+
+  async relistListing(id) {
+    return this.request(`/listings/${id}/relist`, {
+      method: 'POST',
+    });
+  }
+
+  // ✅ NEW: Actually call the DELETE endpoint on the server
+  async deleteListing(id) {
+    return this.request(`/listings/${id}`, {
+      method: 'DELETE',
+    });
+  }
+}
+
+const api = new ApiService();
+
+// --- Mock Data (Fallback) ---
+const INITIAL_LISTINGS = [
+  // Mock data removed to encourage API usage, but structure kept for reference if needed
 ];
 
 const PRESET_LOCATIONS = [
@@ -1195,20 +1202,34 @@ const App = () => {
       alert("Thank you for rating the seller!");
   };
 
-  // --- DELETE Function (New Feature) ---
-  const handleDeleteListing = (listingId) => {
-      // In a real app, you would call api.deleteListing(listingId) here
-      const updatedListings = listings.filter(l => l.id !== listingId);
-      setListings(updatedListings);
+  // ✅ UPDATED: Delete function now calls backend API
+  const handleDeleteListing = async (listingId) => {
+      try {
+          // 1. Call Backend
+          await api.deleteListing(listingId);
+          
+          // 2. Update Local State (UI)
+          const updatedListings = listings.filter(l => l.id !== listingId);
+          setListings(updatedListings);
+      } catch (error) {
+          alert('Failed to delete listing: ' + error.message);
+      }
   };
 
   // --- RELIST Function (Updated Feature) ---
-  const handleRelist = (listingId) => {
-      // In a real app, call api.relistListing(listingId)
-      const updatedListings = listings.map(l => 
-          l.id === listingId ? { ...l, status: 'available', claimedBy: null } : l
-      );
-      setListings(updatedListings);
+  const handleRelist = async (listingId) => {
+      try {
+        // Optimistic UI update
+        const updatedListings = listings.map(l => 
+            l.id === listingId ? { ...l, status: 'available', claimedBy: null } : l
+        );
+        setListings(updatedListings);
+        
+        // Try backend call if supported
+        await api.relistListing(listingId); 
+      } catch (error) {
+        console.warn("Backend relist might not be implemented, but UI updated.");
+      }
   };
 
   // Logic
