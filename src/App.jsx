@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Plus, X, Send, Star, User, LogOut, Menu, Filter, Clock, ArrowLeft, Navigation, ShoppingBag, List, Search, Calendar, MessageCircle, Upload, Locate, Minus, Circle, Heart, ChevronRight, Pizza, Coffee, Apple, Carrot, Sandwich, Utensils, Croissant, ChefHat, UtensilsCrossed, Link, Twitter, Share2, RefreshCw } from 'lucide-react';
+import { MapPin, Plus, X, Send, Star, User, LogOut, Menu, Filter, Clock, ArrowLeft, Navigation, ShoppingBag, List, Search, Calendar, MessageCircle, Upload, Locate, Minus, Circle, Heart, ChevronRight, Pizza, Coffee, Apple, Carrot, Sandwich, Utensils, Croissant, ChefHat, UtensilsCrossed, Link, Twitter, Share2, RefreshCw, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import api from './services/api';
+
 // --- Mock Data ---
 const INITIAL_LISTINGS = [
   {
@@ -126,11 +127,6 @@ const getTimeRemaining = (expiresAt) => {
     return `${hours}h ${minutes}m`;
 };
 
-const getRelativeTimeString = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ', ' + date.toLocaleDateString();
-};
-
 // --- Creative Components ---
 
 const OrganicCard = ({ children, className = "", onClick }) => (
@@ -162,25 +158,18 @@ const PillButton = ({ children, onClick, disabled, variant = 'primary', classNam
 // --- Enhanced Background Pattern ---
 const DoodlesBackground = () => (
     <div className="absolute inset-0 overflow-hidden pointer-events-none select-none mix-blend-multiply opacity-10">
-        {/* Row 1 */}
         <Pizza className="absolute top-[5%] left-[5%] w-24 h-24 text-black -rotate-12" strokeWidth={1.5} />
         <Coffee className="absolute top-[5%] left-[30%] w-20 h-20 text-black rotate-12" strokeWidth={1.5} />
         <Apple className="absolute top-[5%] left-[55%] w-24 h-24 text-black rotate-45" strokeWidth={1.5} />
         <Carrot className="absolute top-[5%] left-[80%] w-28 h-28 text-black -rotate-6" strokeWidth={1.5} />
-        
-        {/* Row 2 */}
         <Sandwich className="absolute top-[30%] left-[15%] w-24 h-24 text-black rotate-12" strokeWidth={1.5} />
         <Utensils className="absolute top-[30%] left-[40%] w-20 h-20 text-black -rotate-45" strokeWidth={1.5} />
         <Croissant className="absolute top-[30%] left-[65%] w-24 h-24 text-black rotate-6" strokeWidth={1.5} />
         <ChefHat className="absolute top-[30%] left-[90%] w-32 h-32 text-black rotate-3" strokeWidth={1} />
-        
-        {/* Row 3 */}
         <div className="absolute top-[55%] left-[5%] w-24 h-24 border-4 border-black rounded-full" />
         <Pizza className="absolute top-[55%] left-[30%] w-32 h-32 text-black rotate-180" strokeWidth={1.5} />
         <Apple className="absolute top-[55%] left-[55%] w-20 h-20 text-black -rotate-12" strokeWidth={1.5} />
         <Coffee className="absolute top-[55%] left-[80%] w-16 h-16 text-black rotate-12" strokeWidth={1.5} />
-        
-        {/* Row 4 */}
         <Circle className="absolute top-[80%] left-[20%] w-4 h-4 bg-black rounded-full" />
         <Circle className="absolute top-[80%] left-[50%] w-6 h-6 border-2 border-black rounded-full" />
         <Plus className="absolute top-[80%] left-[80%] w-8 h-8 text-black rotate-45" />
@@ -694,17 +683,6 @@ const DetailView = ({ selectedListing, setView, currentUser, handleClaimListing,
                             <h3 className="text-sm font-black text-[#1a1a1a] uppercase tracking-widest mb-4">The Goods</h3>
                             <p className="text-gray-600 leading-loose text-lg font-medium">{selectedListing?.description}</p>
                          </div>
-                         {/* Re-List Button Implementation */}
-                         {selectedListing.status === 'claimed' && currentUser?.id === selectedListing.providerId && (
-                            <button 
-                                onClick={() => handleClaimListing(selectedListing.id, 'relist')} // We'll need to adjust handleClaimListing or add a new handler for this specific case if we want to use handleRelist logic here directly. 
-                                // Actually, the prompt asked for "Deal Cancelled?" button in "My Listings". 
-                                // But if I'm viewing detail of my own item that is claimed...
-                                // Let's stick to the MyListingsView implementation as requested in previous turn, but also nice to have here.
-                                // For now, let's rely on MyListingsView for the main action as per previous request.
-                                className="hidden" // Placeholder if we wanted it here.
-                            />
-                         )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -910,7 +888,10 @@ const CreateListingView = ({ setView, handleCreateListing }) => {
     );
 };
 
-const MyListingsView = ({ myListings, setView, onRelist }) => (
+// ==========================================
+// UPDATED COMPONENT: MyListingsView
+// ==========================================
+const MyListingsView = ({ myListings, setView, onRelist, onDelete }) => (
     <div className="min-h-screen bg-[#FDFDFD] flex flex-col">
        <header className="bg-white px-4 py-6 flex items-center gap-4 sticky top-0 z-20 border-b border-gray-100">
           <button onClick={() => setView('map')} className="p-3 hover:bg-gray-50 rounded-full transition-colors">
@@ -926,35 +907,67 @@ const MyListingsView = ({ myListings, setView, onRelist }) => (
               <List className="w-12 h-12 text-[#FFD700]" />
             </div>
             <h3 className="text-2xl font-black text-[#1a1a1a] uppercase mb-2">Nothing Cooking?</h3>
-            <p className="text-gray-500 font-medium mb-10 max-w-xs leading-relaxed">You haven't listed any items yet. Share some food and make a neighbor happy!</p>
+            <p className="text-gray-500 font-medium mb-10 max-w-xs leading-relaxed">You haven't listed any items yet.</p>
             <PillButton onClick={() => setView('create')}>List Your First Item</PillButton>
           </div>
         ) : (
           myListings.map(listing => (
-            <OrganicCard key={listing.id} className="flex gap-5 p-4 pr-6 items-center">
-              <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 bg-gray-100">
+            <OrganicCard key={listing.id} className="flex flex-col md:flex-row gap-5 p-4 pr-6 items-center">
+              <div className="w-full md:w-24 h-48 md:h-24 rounded-2xl overflow-hidden flex-shrink-0 bg-gray-100">
                 <img src={listing.image} alt={listing.title} className="w-full h-full object-cover" />
               </div>
-              <div className="flex-1 py-1">
+              <div className="flex-1 py-1 w-full">
                 <div className="flex justify-between items-start">
                     <div>
-                       <h3 className="font-bold text-lg text-[#1a1a1a] leading-tight mb-2 line-clamp-1">{listing.title}</h3>
-                       <span className={`text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-wider ${listing.status === 'available' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
-                         {listing.status}
-                       </span>
+                        <h3 className="font-bold text-lg text-[#1a1a1a] leading-tight mb-2 line-clamp-1">{listing.title}</h3>
+                        <span className={`text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-wider ${listing.status === 'available' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>
+                          {listing.status}
+                        </span>
                     </div>
-                    {listing.status === 'claimed' && (
-                        <button 
-                            onClick={(e) => {
-                                e.stopPropagation(); 
-                                onRelist(listing.id);
-                            }}
-                            className="text-[10px] font-bold text-red-500 border-2 border-red-100 bg-red-50 px-3 py-1.5 rounded-full hover:bg-red-100 hover:border-red-200 transition-colors flex items-center gap-1"
-                        >
-                            <RefreshCw className="w-3 h-3" />
-                            Deal Cancelled?
-                        </button>
-                    )}
+
+                    {/* ACTION BUTTONS */}
+                    <div className="flex flex-col gap-2 items-end">
+                        {listing.status === 'available' && (
+                             <button 
+                                onClick={(e) => {
+                                    e.stopPropagation(); 
+                                    if(window.confirm('Remove this listing permanently?')) onDelete(listing.id);
+                                }}
+                                className="text-[10px] font-bold text-red-500 border-2 border-red-100 bg-red-50 px-3 py-1.5 rounded-full hover:bg-red-500 hover:text-white transition-colors flex items-center gap-1"
+                            >
+                                <Trash2 className="w-3 h-3" />
+                                Remove
+                            </button>
+                        )}
+
+                        {listing.status === 'claimed' && (
+                            <div className="flex gap-2">
+                                {/* Order Cancelled Button */}
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation(); 
+                                        if(window.confirm('Mark order as cancelled? This will make the listing available again.')) onRelist(listing.id);
+                                    }}
+                                    className="text-[10px] font-bold text-red-500 border-2 border-red-100 bg-red-50 px-3 py-1.5 rounded-full hover:bg-red-500 hover:text-white transition-colors flex items-center gap-1"
+                                >
+                                    <XCircle className="w-3 h-3" />
+                                    Order Cancelled
+                                </button>
+
+                                {/* Order Done Button */}
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation(); 
+                                        if(window.confirm('Confirm order done? This will delete the listing permanently.')) onDelete(listing.id);
+                                    }}
+                                    className="text-[10px] font-bold text-emerald-600 border-2 border-emerald-100 bg-emerald-50 px-3 py-1.5 rounded-full hover:bg-emerald-600 hover:text-white transition-colors flex items-center gap-1"
+                                >
+                                    <CheckCircle className="w-3 h-3" />
+                                    Order Done
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
                 <div className="flex justify-between items-end mt-3 border-t border-gray-50 pt-3">
                     <p className="text-sm font-black text-[#1a1a1a]">{listing.price}</p>
@@ -1065,7 +1078,7 @@ const ChatView = ({ setView, selectedListing, chatMessages, currentUser, message
 const App = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [view, setView] = useState('login'); 
-  const [listings, setListings] = useState([]);
+  const [listings, setListings] = useState(INITIAL_LISTINGS);
   const [selectedListing, setSelectedListing] = useState(null);
   const [chatMessages, setChatMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
@@ -1082,61 +1095,73 @@ const App = () => {
   const [itemToRate, setItemToRate] = useState(null);
 
   // Handlers
-const handleLogin = async (email, password) => {
-  setLoading(true);
-  try {
-    const user = await api.login(email, password);
-    setCurrentUser(user);
-    setView('map');
-  } catch (error) {
-    alert('Login failed: ' + error.message);
-  } finally {
-    setLoading(false);
-  }
-};
+  const handleLogin = async (email, password) => {
+    setLoading(true);
+    try {
+        const user = await api.login(email, password);
+        setCurrentUser(user);
+        setView('map');
+    } catch (error) {
+        alert('Login failed: ' + error.message);
+    } finally {
+        setLoading(false);
+    }
+  };
+  
   const handleSignup = async (name, email, password) => {
-  setLoading(true);
-  try {
-    const user = await api.signup(name, email, password);
-    setCurrentUser(user);
-    setView('map');
-  } catch (error) {
-    alert('Signup failed: ' + error.message);
-  } finally {
-    setLoading(false);
-  }
-};
-const fetchListings = async () => {
-  try {
-    const data = await api.getListings({
-      type: filterType,
-      search: searchQuery,
-      lat: currentUser?.location?.lat,
-      lng: currentUser?.location?.lng,
-      radius: searchRadius
-    });
-    setListings(data);
-  } catch (error) {
-    console.error('Failed to fetch listings:', error);
-  }
-};
-useEffect(() => {
-  if (currentUser && view === 'map') {
-    fetchListings();
-  }
-}, [currentUser, view, filterType, searchQuery, searchRadius]);
+    setLoading(true);
+    try {
+        const user = await api.signup(name, email, password);
+        setCurrentUser(user);
+        setView('map');
+    } catch (error) {
+        alert('Signup failed: ' + error.message);
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  const fetchListings = async () => {
+    try {
+      const data = await api.getListings({
+        type: filterType,
+        search: searchQuery,
+        lat: currentUser?.location?.lat,
+        lng: currentUser?.location?.lng,
+        radius: searchRadius
+      });
+      setListings(data);
+    } catch (error) {
+      console.error('Failed to fetch listings:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (currentUser && view === 'map') {
+      fetchListings();
+    }
+  }, [currentUser, view, filterType, searchQuery, searchRadius]);
 
   const handleUpdateLocation = (location) => { setCurrentUser(prev => ({ ...prev, location: { ...prev.location, ...location } })); setShowLocationModal(false); };
+  
   const handleCreateListing = async (listingData) => {
-  try {
-    await api.createListing(listingData);
-    await fetchListings(); // Refresh listings from server
-    setView('map');
-  } catch (error) {
-    alert('Failed to create listing: ' + error.message);
-  }
-};
-  const handleClaimListing = (listing) => { const updatedListings = listings.map(l => l.id === listing.id ? { ...l, status: 'claimed', claimedBy: currentUser.id } : l); setListings(updatedListings); setSelectedListing({ ...listing, status: 'claimed' }); setChatMessages([{ id: 1, sender: 'system', text: `You claimed "${listing.title}". Coordinate pickup with ${listing.provider}.`, timestamp: new Date().toISOString() }]); setView('chat'); };
+    try {
+      await api.createListing(listingData);
+      await fetchListings(); // Refresh listings from server
+      setView('map');
+    } catch (error) {
+      alert('Failed to create listing: ' + error.message);
+    }
+  };
+
+  const handleClaimListing = (listing) => { 
+      const updatedListings = listings.map(l => l.id === listing.id ? { ...l, status: 'claimed', claimedBy: currentUser.id } : l); 
+      setListings(updatedListings); 
+      setSelectedListing({ ...listing, status: 'claimed' }); 
+      setChatMessages([{ id: 1, sender: 'system', text: `You claimed "${listing.title}". Coordinate pickup with ${listing.provider}.`, timestamp: new Date().toISOString() }]); 
+      setView('chat'); 
+  };
+  
   const handleStartChat = (listing) => { setSelectedListing(listing); setChatMessages([{ id: 1, sender: 'system', text: `Starting chat about "${listing.title}"`, timestamp: new Date().toISOString() }]); setView('chat'); };
   const handleSendMessage = () => { if (messageInput.trim()) { setChatMessages([...chatMessages, { id: chatMessages.length + 1, sender: currentUser.id, senderName: currentUser.name, text: messageInput, timestamp: new Date().toISOString() }]); setMessageInput(''); } };
   
@@ -1154,45 +1179,36 @@ useEffect(() => {
   };
 
   const handleRatingSubmit = (score, comment) => {
-      if (!itemToRate) return;
-      
-      // Update listings with new calculated rating AND new text review
       const updatedListings = listings.map(l => {
           if (l.providerId === itemToRate.providerId) {
               const newCount = (l.reviewCount || 0) + 1;
               const currentTotal = l.rating * (l.reviewCount || 0);
               const newRating = ((currentTotal + score) / newCount).toFixed(1);
-              
-              const newReview = {
-                  id: Date.now(),
-                  user: currentUser.name || "User",
-                  rating: score,
-                  text: comment || "No comment provided.",
-                  date: "Just now"
-              };
-
-              return { 
-                  ...l, 
-                  rating: parseFloat(newRating), 
-                  reviewCount: newCount,
-                  reviews: [newReview, ...(l.reviews || [])]
-              };
+              const newReview = { id: Date.now(), user: currentUser.name || "User", rating: score, text: comment || "No comment provided.", date: "Just now" };
+              return { ...l, rating: parseFloat(newRating), reviewCount: newCount, reviews: [newReview, ...(l.reviews || [])] };
           }
           return l;
       });
-      
       setListings(updatedListings);
       setRateModalOpen(false);
       setItemToRate(null);
       alert("Thank you for rating the seller!");
   };
 
+  // --- DELETE Function (New Feature) ---
+  const handleDeleteListing = (listingId) => {
+      // In a real app, you would call api.deleteListing(listingId) here
+      const updatedListings = listings.filter(l => l.id !== listingId);
+      setListings(updatedListings);
+  };
+
+  // --- RELIST Function (Updated Feature) ---
   const handleRelist = (listingId) => {
+      // In a real app, call api.relistListing(listingId)
       const updatedListings = listings.map(l => 
           l.id === listingId ? { ...l, status: 'available', claimedBy: null } : l
       );
       setListings(updatedListings);
-      alert("Item relisted successfully!");
   };
 
   // Logic
@@ -1219,19 +1235,15 @@ useEffect(() => {
         />
       )}
 
-      {currentUser && view === 'myListings' && <MyListingsView myListings={myListings} setView={setView} onRelist={handleRelist} />}
+      {currentUser && view === 'myListings' && <MyListingsView myListings={myListings} setView={setView} onRelist={handleRelist} onDelete={handleDeleteListing} />}
       {currentUser && view === 'myOrders' && <MyOrdersView myOrders={myOrders} setView={setView} onRateClick={handleRateClick} />}
       {currentUser && view === 'wishlist' && <WishlistView wishlist={wishlist} listings={listings} setView={setView} />}
       
       {currentUser && view === 'detail' && (
         <DetailView 
-            selectedListing={selectedListing} 
-            setView={setView} 
-            currentUser={currentUser} 
-            handleClaimListing={handleClaimListing} 
-            handleStartChat={handleStartChat} 
-            wishlist={wishlist}
-            toggleWishlist={toggleWishlist}
+            selectedListing={selectedListing} setView={setView} currentUser={currentUser} 
+            handleClaimListing={handleClaimListing} handleStartChat={handleStartChat} 
+            wishlist={wishlist} toggleWishlist={toggleWishlist}
         />
       )}
       
@@ -1241,12 +1253,7 @@ useEffect(() => {
       {showLocationModal && <LocationModal setShowLocationModal={setShowLocationModal} handleUpdateLocation={handleUpdateLocation} />}
       
       {rateModalOpen && (
-        <RateSellerModal 
-            show={rateModalOpen} 
-            onClose={() => setRateModalOpen(false)} 
-            onSubmit={handleRatingSubmit} 
-            providerName={itemToRate?.provider}
-        />
+        <RateSellerModal show={rateModalOpen} onClose={() => setRateModalOpen(false)} onSubmit={handleRatingSubmit} providerName={itemToRate?.provider} />
       )}
     </div>
   );
