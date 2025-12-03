@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -10,12 +9,11 @@ require('dotenv').config();
 
 const app = express();
 
-// Middleware
-// Middleware
+// ==================== MIDDLEWARE ====================
 app.use(cors({
   origin: [
-    "https://se-project-1jrr.vercel.app", // ✅ ADDED: This is the link you are actually using
-    "https://se-project-1jrr-git-main-yashtomar2201s-projects.vercel.app", // ✅ FIXED: Removed the trailing slash '/'
+    "https://se-project-1jrr.vercel.app", 
+    "https://se-project-1jrr-git-main-yashtomar2201s-projects.vercel.app",
     "http://localhost:3000", 
     "http://localhost:5173"
   ],
@@ -27,11 +25,8 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use('/uploads', express.static('uploads'));
 
-// MongoDB Connection
+// ==================== DATABASE ====================
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/tableturn')
-.then(() => console.log('✅ MongoDB Connected'))
-.catch(err => console.error('❌ MongoDB Connection Error:', err)
-)
 .then(() => console.log('✅ MongoDB Connected'))
 .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
@@ -49,26 +44,6 @@ const userSchema = new mongoose.Schema({
     address: String
   },
   createdAt: { type: Date, default: Date.now }
-});
-
-app.delete('/api/listings/:id', authenticateToken, async (req, res) => {
-  try {
-    const listing = await Listing.findById(req.params.id);
-    
-    if (!listing) {
-      return res.status(404).json({ error: 'Listing not found' });
-    }
-
-    // Only allow the owner (provider) to delete it
-    if (listing.providerId.toString() !== req.user.id) {
-      return res.status(403).json({ error: 'Not authorized' });
-    }
-
-    await Listing.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Listing deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
 });
 
 const listingSchema = new mongoose.Schema({
@@ -124,7 +99,7 @@ const Listing = mongoose.model('Listing', listingSchema);
 const Chat = mongoose.model('Chat', chatSchema);
 const Wishlist = mongoose.model('Wishlist', wishlistSchema);
 
-// ==================== MIDDLEWARE ====================
+// ==================== AUTH MIDDLEWARE ====================
 
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -337,6 +312,27 @@ app.put('/api/listings/:id', authenticateToken, async (req, res) => {
     );
 
     res.json(updatedListing);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ✅ ADDED: Delete Route for Removing Listings
+app.delete('/api/listings/:id', authenticateToken, async (req, res) => {
+  try {
+    const listing = await Listing.findById(req.params.id);
+    
+    if (!listing) {
+      return res.status(404).json({ error: 'Listing not found' });
+    }
+
+    // Only allow the owner (provider) to delete it
+    if (listing.providerId.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    await Listing.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Listing deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -579,8 +575,6 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 module.exports = app;
 
 // ✅ Use Render's port, or 5000 if testing locally
-// Start server only when this file is the entrypoint (prevents double-listen when imported)
-// ✅ Correct Way: Use the environment variable PORT, or 5000 for local development
 const PORT = process.env.PORT || 5000;
 
 // Listen on '0.0.0.0' to ensure Render can find the app
