@@ -553,8 +553,11 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 module.exports = app;
 
 // ✅ Use Render's port, or 5000 if testing locally
-const PORT = process.env.PORT || 5000; 
+// Start server only when this file is the entrypoint (prevents double-listen when imported)
+// ✅ Correct Way: Use the environment variable PORT, or 5000 for local development
+const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+// Listen on '0.0.0.0' to ensure Render can find the app
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
